@@ -1,0 +1,5 @@
+{
+  "name": "ProcureFlow",
+  "description": "A streamlined, dark-mode purchase request system for teams. Features role-based views (Employee/ESS), multi-item request forms, status tracking, and context-aware messaging.",
+  "requestFramePermissions": []
+}
