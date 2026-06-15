@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserRole, User } from '../types';
-import { authenticateUser } from '../services/db';
+import { authenticateUser, getUsers } from '../services/db';
+import { generateDefaultPassword } from '../services/db';
 import { ChevronRight, Hexagon, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 
 interface LoginProps {
@@ -12,6 +13,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // All personnel available to log in as (normalized from the historic PR record).
+  const allUsers = getUsers();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,15 +136,36 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   </button>
               </form>
 
-              {/* Helpful Hint for demo/mock purpose, tailored to the new logic */}
-              <div className="pt-8 border-t border-border/50 text-center">
-                  <p className="text-sm text-gray-500 mb-4">
-                      <span className="font-bold text-gray-400">Default Password Policy:</span> Last Name + First Initial (e.g., 'JonesG')
+              {/* Quick login for every requestor imported from the Master PR Record */}
+              <div className="pt-8 border-t border-border/50">
+                  <p className="text-sm text-gray-500 mb-4 text-center">
+                      <span className="font-bold text-gray-400">Default Password Policy:</span> Last Name + First Initial (e.g., 'JacksonG')
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                      <button onClick={() => { setUsername('morgan'); setPassword('ElliotM'); }} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-gray-400 border border-border">Morgan (Employee)</button>
-                      <button onClick={() => { setUsername('mike'); setPassword('GreereM'); }} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-gray-400 border border-border">Mike (ESS)</button>
-                      <button onClick={() => { setUsername('admin'); setPassword('admin123'); }} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-gray-400 border border-border">System Admin</button>
+                  <p className="text-[10px] font-mono text-gray-600 uppercase tracking-wider mb-2 text-center">Log in as any personnel</p>
+                  <div className="flex flex-wrap gap-2 justify-center max-h-48 overflow-y-auto scrollbar-thin">
+                      <button
+                          onClick={() => { setUsername('admin'); setPassword('admin123'); }}
+                          className="px-3 py-1 bg-brand/10 hover:bg-brand/20 rounded text-xs text-brand border border-brand/40"
+                      >
+                          System Admin
+                      </button>
+                      {allUsers
+                        .filter(u => u.username !== 'admin')
+                        .sort((a, b) => a.lastName.localeCompare(b.lastName))
+                        .map(u => (
+                          <button
+                              key={u.id}
+                              onClick={() => {
+                                  setUsername(u.username);
+                                  setPassword(generateDefaultPassword(u.firstName, u.lastName));
+                              }}
+                              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-gray-400 border border-border"
+                              title={`${u.jobTitle} • ${u.role}`}
+                          >
+                              {u.firstName} {u.lastName}
+                              <span className="ml-1 text-[9px] text-gray-600 uppercase">{u.role === 'ESS' ? '(ESS)' : u.role === 'Admin' ? '(Admin)' : ''}</span>
+                          </button>
+                      ))}
                   </div>
               </div>
           </div>

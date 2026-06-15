@@ -1,7 +1,8 @@
 import { PurchaseRequest, RequestStatus, Priority, Message, ApprovalEvent, UserRole, User } from '../types';
+import { HISTORIC_USERS, HISTORIC_REQUESTS } from './historicData';
 
-const STORAGE_KEY = 'procureflow_data_v4';
-const USERS_KEY = 'procureflow_users_v4';
+const STORAGE_KEY = 'procureflow_data_v6';
+const USERS_KEY = 'procureflow_users_v6';
 
 // Simple mock hash function for demonstration
 const hashPassword = (pwd: string) => btoa(pwd).split('').reverse().join('');
@@ -23,39 +24,18 @@ const SEED_USERS: User[] = [
         passwordHash: hashPassword('admin123'), // Non-standard for admin
         isDefaultPassword: false
     },
-    {
-        id: 'u2',
-        firstName: 'Morgan',
-        lastName: 'Elliot',
-        jobTitle: 'MFG ENG',
-        role: 'Employee',
-        username: 'morgan',
-        passwordHash: hashPassword(generateDefaultPassword('Morgan', 'Elliot')),
-        isDefaultPassword: true
-    },
-    {
-        id: 'u3',
-        firstName: 'Mike',
-        lastName: 'Greere',
-        jobTitle: 'ESS Lead',
-        role: 'ESS',
-        username: 'mike',
-        passwordHash: hashPassword(generateDefaultPassword('Mike', 'Greere')),
-        isDefaultPassword: true
-    },
-    {
-        id: 'u4',
-        firstName: 'Gerald',
-        lastName: 'Jones',
-        jobTitle: 'Facility Mgr',
-        role: 'Employee',
-        username: 'gerald',
-        passwordHash: hashPassword(generateDefaultPassword('Gerald', 'Jones')),
-        isDefaultPassword: true
-    }
+    // Real personnel imported & normalized from the Master PR Record spreadsheet
+    ...HISTORIC_USERS.map(({ defaultPassword, ...u }) => ({
+        ...u,
+        passwordHash: hashPassword(defaultPassword),
+    }))
 ];
 
-const SEED_DATA: PurchaseRequest[] = [
+// Real historic purchase requests imported & normalized from the Master PR Record spreadsheet
+const SEED_DATA: PurchaseRequest[] = HISTORIC_REQUESTS;
+
+/* Demo seed retained for reference only (not used):
+const _UNUSED_DEMO_SEED: PurchaseRequest[] = [
   {
     id: 'REQ-1001',
     projectCode: 'Project Alpha-X',
@@ -166,6 +146,7 @@ const SEED_DATA: PurchaseRequest[] = [
     notes: 'For internal testing'
   }
 ];
+*/
 
 // --- User Management ---
 

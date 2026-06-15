@@ -20,7 +20,15 @@ const emptyItem: LineItem = {
   quantity: 1,
   unitType: 'Each',
   pricePerUnit: 0,
+  itemType: 'Hardware/Tools',
+  buildCell: 'Common',
+  vendorUrl: '',
+  ordered: false,
+  received: false,
 };
+
+const ITEM_TYPES = ['Hardware/Tools', 'Consumable', 'Tool', 'Safety', 'Program'];
+const BUILD_CELLS = ['Common', 'Tailset', 'Coldtree', 'Pumpcart', 'E-rack', 'Wiring', 'Integration', 'Inspection', 'Pre-Prod', 'Facilities'];
 
 export const RequestForm: React.FC<RequestFormProps> = ({ initialData, currentUser, onCancel, onSave }) => {
   const [projectCode, setProjectCode] = useState(initialData?.projectCode || '');
@@ -184,6 +192,30 @@ export const RequestForm: React.FC<RequestFormProps> = ({ initialData, currentUs
                                     onChange={e => updateItem(item.id, 'description', e.target.value)}
                                 />
                              </div>
+                        </div>
+
+                        {/* Classification: Type & Build Cell */}
+                        <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Type</label>
+                                <select
+                                    className="w-full bg-[#09090b] border border-border px-3 py-2 text-sm text-white focus:border-brand outline-none rounded-sm"
+                                    value={item.itemType || 'Hardware/Tools'}
+                                    onChange={e => updateItem(item.id, 'itemType', e.target.value)}
+                                >
+                                    {ITEM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Build Cell</label>
+                                <select
+                                    className="w-full bg-[#09090b] border border-border px-3 py-2 text-sm text-white focus:border-brand outline-none rounded-sm"
+                                    value={item.buildCell || 'Common'}
+                                    onChange={e => updateItem(item.id, 'buildCell', e.target.value)}
+                                >
+                                    {BUILD_CELLS.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            </div>
                         </div>
 
                         {/* Vendor Info */}

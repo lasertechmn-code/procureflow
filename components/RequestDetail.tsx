@@ -1,22 +1,40 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PurchaseRequest, RequestStatus, Message, Priority, UserRole, ApprovalEvent } from '../types';
-import { ArrowLeft, Send, Paperclip, Printer, Trash2, CheckCircle, XCircle, Clock, AlertCircle, Edit, File, X, Image as ImageIcon, Download, FileText } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, Printer, Trash2, CheckCircle, XCircle, Clock, AlertCircle, Edit, File, X, Image as ImageIcon, Download, FileText, Search } from 'lucide-react';
 import { addMessage, processApproval, deleteRequest } from '../services/db';
+import { getItemCategory, CATEGORY_STYLES, Highlight } from '../services/itemCategory';
 
 interface RequestDetailProps {
   request: PurchaseRequest;
   currentUserRole: UserRole;
+  searchTerm?: string;
   onBack: () => void;
   onUpdate: () => void;
   onEdit: () => void;
 }
 
-export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUserRole, onBack, onUpdate, onEdit }) => {
+export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUserRole, searchTerm, onBack, onUpdate, onEdit }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [manifestSearch, setManifestSearch] = useState(searchTerm || '');
   const [selectedFiles, setSelectedFiles] = useState<{name: string, type: string, data: string}[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState('');
+
+  // Carry an incoming global search term into the manifest search on open
+  useEffect(() => {
+    if (searchTerm) setManifestSearch(searchTerm);
+  }, [searchTerm]);
+
+  const visibleItems = useMemo(() => {
+    const q = manifestSearch.trim().toLowerCase();
+    if (!q) return request.items;
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return request.items.filter(it => {
+      const blob = [it.name, it.description, it.vendor, it.mfgPartNumber, it.buildCell || '', getItemCategory(it)].join(' ').toLowerCase();
+      return tokens.every(t => blob.includes(t));
+    });
+  }, [request.items, manifestSearch]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -166,13 +184,14 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUs
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight leading-none uppercase">{request.projectCode}</h1>
-                    <span className="text-gray-500 font-mono text-xs">ID: {request.id}</span>
+                    <span className="block text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-0.5">Workcell</span>
+                    <h1 className="text-3xl font-bold text-white tracking-tight leading-none uppercase">{request.projectCode}</h1>
+                    <span className="text-gray-500 font-mono text-sm">ID: {request.id}</span>
                 </div>
             </div>
             <div className="flex items-center gap-2">
                  {canEdit && (
-                     <button onClick={onEdit} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-border text-white rounded-sm transition-colors text-xs font-bold uppercase tracking-wide">
+                     <button onClick={onEdit} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-border text-white rounded-sm transition-colors text-sm font-bold uppercase tracking-wide">
                         <Edit size={14} />
                         {request.status === RequestStatus.PENDING ? 'Edit' : 'Edit & Resubmit'}
                      </button>
@@ -194,9 +213,9 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUs
             <div className="bg-surface border border-border p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <div className="text-xs font-mono text-gray-500 mb-1 uppercase">Current Status</div>
+                        <div className="text-sm font-mono text-gray-500 mb-1 uppercase">Current Status</div>
                         <div className="flex items-center gap-3">
-                            <span className="text-2xl font-bold text-white uppercase tracking-tight">{request.status}</span>
+                            <span className="text-3xl font-bold text-white uppercase tracking-tight">{request.status}</span>
                             <span className={`w-3 h-3 ${
                                 request.status === 'Ordered' ? 'bg-green-500' : 
                                 request.status === 'Received' ? 'bg-teal-500' :
@@ -206,22 +225,22 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUs
                         </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                         <div className="text-3xl font-mono text-white font-bold tracking-tighter">${request.totalAmount.toFixed(2)}</div>
+                         <div className="text-4xl font-mono text-white font-bold tracking-tighter">${request.totalAmount.toFixed(2)}</div>
                          
                          {/* ESS Actions */}
                          {isESS && (
                              <div className="flex flex-wrap gap-2 justify-end">
                                 {request.status !== RequestStatus.REJECTED && request.status !== RequestStatus.RECEIVED && (
-                                    <button onClick={() => handleAction('Reject')} className="px-4 py-1.5 bg-red-500/10 text-red-500 border border-red-500/50 hover:bg-red-500/20 transition-colors text-xs font-bold uppercase">Reject</button>
+                                    <button onClick={() => handleAction('Reject')} className="px-4 py-1.5 bg-red-500/10 text-red-500 border border-red-500/50 hover:bg-red-500/20 transition-colors text-sm font-bold uppercase">Reject</button>
                                 )}
                                 {request.status !== RequestStatus.NEEDS_INFO && request.status !== RequestStatus.RECEIVED && request.status !== RequestStatus.REJECTED && (
-                                    <button onClick={() => handleAction('RequestInfo')} className="px-4 py-1.5 bg-orange-500/10 text-orange-500 border border-orange-500/50 hover:bg-orange-500/20 transition-colors text-xs font-bold uppercase">Request Info</button>
+                                    <button onClick={() => handleAction('RequestInfo')} className="px-4 py-1.5 bg-orange-500/10 text-orange-500 border border-orange-500/50 hover:bg-orange-500/20 transition-colors text-sm font-bold uppercase">Request Info</button>
                                 )}
                                 {request.status !== RequestStatus.ORDERED && request.status !== RequestStatus.RECEIVED && request.status !== RequestStatus.REJECTED && (
-                                    <button onClick={() => handleAction('Order')} className="px-4 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors text-xs font-bold uppercase">Mark Ordered</button>
+                                    <button onClick={() => handleAction('Order')} className="px-4 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors text-sm font-bold uppercase">Mark Ordered</button>
                                 )}
                                 {request.status === RequestStatus.ORDERED && (
-                                    <button onClick={() => handleAction('Received')} className="px-4 py-1.5 bg-teal-600 text-white hover:bg-teal-500 transition-colors text-xs font-bold uppercase">Mark Received</button>
+                                    <button onClick={() => handleAction('Received')} className="px-4 py-1.5 bg-teal-600 text-white hover:bg-teal-500 transition-colors text-sm font-bold uppercase">Mark Received</button>
                                 )}
                              </div>
                          )}
@@ -279,20 +298,60 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUs
             <div className="bg-surface border border-border">
                 <div className="px-6 py-4 border-b border-border font-bold text-white flex justify-between items-center bg-black/20 uppercase text-sm tracking-wider">
                     <span>Manifest</span>
-                    <span className="text-xs bg-white/10 px-2 py-1 text-gray-300 font-mono">{request.items.length} ITEMS</span>
+                    <span className="text-xs bg-white/10 px-2 py-1 text-gray-300 font-mono">
+                        {manifestSearch.trim() ? `${visibleItems.length} / ${request.items.length}` : request.items.length} ITEMS
+                    </span>
+                </div>
+                {/* Manifest search */}
+                <div className="px-6 py-3 border-b border-border bg-black/10">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={15} />
+                        <input
+                            type="text"
+                            placeholder="Search items in this order..."
+                            className="w-full bg-[#09090b] border border-border rounded-sm pl-9 pr-8 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-brand"
+                            value={manifestSearch}
+                            onChange={e => setManifestSearch(e.target.value)}
+                        />
+                        {manifestSearch && (
+                            <button onClick={() => setManifestSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                                <X size={15} />
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div className="divide-y divide-border">
-                    {request.items.map((item) => (
+                    {visibleItems.length === 0 ? (
+                        <div className="p-6 text-center text-gray-600 font-mono text-sm">NO ITEMS MATCH "{manifestSearch}"</div>
+                    ) : visibleItems.map((item) => {
+                        const cat = CATEGORY_STYLES[getItemCategory(item)];
+                        return (
                         <div key={item.id} className="p-4 hover:bg-white/5 transition-colors">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
-                                    <h4 className="font-bold text-white text-sm">{item.name}</h4>
-                                    <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                                    <div className="flex gap-4 mt-2 text-[10px] font-mono text-gray-400 uppercase">
-                                        <span>VEND: <span className="text-gray-300">{item.vendor}</span></span>
-                                        <span>PN: <span className="text-gray-300">{item.mfgPartNumber}</span></span>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h4 className="font-bold text-white text-sm"><Highlight text={item.name} term={manifestSearch} /></h4>
+                                        <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border rounded-sm ${cat.badge}`}>{cat.label}</span>
+                                        {item.buildCell && (
+                                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 border border-brand/40 text-brand bg-brand/10">{item.buildCell}</span>
+                                        )}
+                                        {item.ordered && (
+                                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 border border-green-700 text-green-500 bg-green-500/10">Ordered</span>
+                                        )}
+                                        {item.received && (
+                                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 border border-teal-700 text-teal-400 bg-teal-500/10">Received</span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1"><Highlight text={item.description} term={manifestSearch} /></p>
+                                    <div className="flex gap-4 mt-2 text-[10px] font-mono text-gray-400 uppercase flex-wrap">
+                                        <span>VEND: {item.vendorUrl ? (
+                                            <a href={item.vendorUrl} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline"><Highlight text={item.vendor} term={manifestSearch} /></a>
+                                        ) : (
+                                            <span className="text-gray-300"><Highlight text={item.vendor} term={manifestSearch} /></span>
+                                        )}</span>
+                                        <span>PN: <span className="text-gray-300"><Highlight text={item.mfgPartNumber} term={manifestSearch} /></span></span>
                                         {item.url && (
-                                            <a href={item.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">LINK</a>
+                                            <a href={item.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">PRODUCT LINK</a>
                                         )}
                                     </div>
                                 </div>
@@ -302,7 +361,8 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUs
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
@@ -313,6 +373,14 @@ export const RequestDetail: React.FC<RequestDetailProps> = ({ request, currentUs
                     <div>
                         <span className="block text-gray-500 text-xs font-mono uppercase mb-1">Requester</span>
                         <span className="text-white font-medium">{request.requesterName}</span>
+                    </div>
+                    <div>
+                        <span className="block text-gray-500 text-xs font-mono uppercase mb-1">Submitted</span>
+                        <span className="text-white font-medium">
+                            {request.submittedDate
+                                ? `${request.submittedDate}${request.submittedTime ? ' ' + request.submittedTime : ''}`
+                                : new Date(request.createdAt).toLocaleString()}
+                        </span>
                     </div>
                     <div>
                         <span className="block text-gray-500 text-xs font-mono uppercase mb-1">Due Date</span>
