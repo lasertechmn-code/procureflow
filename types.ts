@@ -38,6 +38,11 @@ export interface LineItem {
   quantity: number;
   unitType: string;
   pricePerUnit: number;
+  itemType?: string;   // e.g. Hardware/Tools, Consumable, Tool, Safety, Program
+  buildCell?: string;  // e.g. Tailset, Coldtree, Common
+  vendorUrl?: string;  // company main landing page
+  ordered?: boolean;
+  received?: boolean;
 }
 
 export interface Message {
@@ -65,6 +70,8 @@ export interface PurchaseRequest {
   createdAt: string;
   updatedAt: string;
   neededByDate: string;
+  submittedDate?: string;  // extracted from requestor column (YYYY-MM-DD)
+  submittedTime?: string;  // extracted from requestor column (HH:MM:SS)
   priority: Priority;
   status: RequestStatus;
   items: LineItem[];
@@ -74,7 +81,20 @@ export interface PurchaseRequest {
   notes: string;
 }
 
-export type ViewState = 'dashboard' | 'new_request' | 'edit_request' | 'detail' | 'analytics' | 'admin_panel';
+export type ViewState = 'dashboard' | 'new_request' | 'edit_request' | 'detail' | 'analytics' | 'admin_panel' | 'item_explorer';
+
+export interface ExplorerFilters {
+  search?: string;
+  workcell?: string;
+  requester?: string;
+  supplier?: string;
+  category?: string;
+  status?: string;       // RequestStatus value or ''
+  minPrice?: string;
+  maxPrice?: string;
+  fromDate?: string;     // YYYY-MM-DD
+  toDate?: string;       // YYYY-MM-DD
+}
 
 export interface AppState {
   currentView: ViewState;

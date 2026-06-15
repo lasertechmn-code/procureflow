@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output / generated artifacts
+dist/
+build/
+release/
+
+# Shareable packaged zip (large binary)
+ProcureFlow-Share/
+
+# Generated icon assets (recreated by `npm run icon`)
+build/icon.png
+public/icon.svg
+
+# Raw source spreadsheets (already normalized into services/historicData.ts)
+historicData/
+
+# Logs & misc
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Local env / secrets
+.env
+.env.local
+.env.*.local
